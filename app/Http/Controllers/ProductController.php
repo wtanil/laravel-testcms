@@ -3,19 +3,40 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-
 use App\Http\Requests;
 use Validator;
 use App\Product;
 use App\Category;
+use App\Contracts\ProductRepositoryInterface;
+use App\Contracts\CategoryRepositoryInterface;
 
-class ProductController extends Controller
-{
+class ProductController extends Controller {
+    /**
+     * The product repository instance.
+     *
+     * @var ProductRepositoryInterface
+     */
+    protected $product;
 
-    public function __construct() {
+    /**
+     * The category repository instance.
+     *
+     * @var CategoryRepositoryInterface
+     */
+    protected $category;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param  ProductRepositoryInterface $product
+     * @param  CategoryRepositoryInterface $category
+     * @return void
+     */
+    public function __construct(ProductRepositoryInterface $product, CategoryRepositoryInterface $category) {
 
         $this->middleware('auth');
+        $this->product = $product;
+        $this->category = $category;
 
     }
 
@@ -24,14 +45,12 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
-    {
-        // $products = Product::where('user_id', Auth::user()->id)->get();
+    public function index(Request $request) {
 
-        // $tasks = $request->user()->tasks()->get();
-        $products = $request->user()->products()->get();
+        $tmpProducts = $this->product->forUser($request->user());
 
-        return view('product.index', ['products' => $products]);
+        return view('product.index', [
+            'products' => $tmpProducts]);
     }
 
     /**
@@ -39,10 +58,11 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function create()
-    {
-        $categories = Category::all();
-        return view('product.create', ['categories' => $categories]);
+    public function create() {
+
+        $tmpCategory = $this->category->getCategory();
+
+        return view('product.create', ['categories' => $tmpCategory]);
     }
 
     /**
@@ -51,8 +71,7 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
 
         $validator = Validator::make($request->all(), [
             'product_name' => 'required|max:255',
@@ -66,14 +85,7 @@ class ProductController extends Controller
             ->withErrors($validator);
         }
 
-        $product = new Product;
-
-        $product->product_name = $request->product_name;
-        $product->product_description = $request->product_description;
-        $product->category_id = $request->product_category;
-        // $product->user_id = Auth::user()->id;
-        $product->user_id = $request->user()->id;
-        $product->save();
+        $this->product->createProduct($request);
 
         return redirect('/product');
 
@@ -85,14 +97,11 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
-    {
-        $product = Product::where([
-                ['id', $id],
-                ['user_id', Auth::user()->id]
-            ])->first();
+    public function show(Request $request, $id) {
 
-        return view('product.show', ['product' => $product]);
+        $tmpProduct = $this->product->forUserAndId($request->user(), $id);
+
+        return view('product.show', ['product' => $tmpProduct]);
     }
 
     /**
@@ -101,18 +110,13 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
-    {
-        $product = Product::where([
-                ['id', $id],
-                ['user_id', Auth::user()->id]
-            ])->first();
+    public function edit(Request $request, $id) {
 
-        $categories = Category::all();
-        // return view('product.create', ['categories' => $categories]);
+        $tmpProduct = $this->product->forUserAndId($request->user(), $id);
+        $tmpCategory = $this->category->getCategory();
 
-        return view('product.edit', ['product' => $product,
-            'categories' =>$categories
+        return view('product.edit', ['product' => $tmpProduct,
+            'categories' =>$tmpCategory
             ]);
     }
 
@@ -123,8 +127,7 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
+    public function update(Request $request, $id) {
         $validator = Validator::make($request->all(), [
             'product_name' => 'required|max:255',
             'product_description' => 'max:1000',
@@ -137,17 +140,9 @@ class ProductController extends Controller
             ->withErrors($validator);
         }
 
-        $product = Product::where([
-                ['id', $id],
-                ['user_id', Auth::user()->id]
-            ])->first();
+        $tmpProduct = $this->product->updateById($request, $id);
 
-        $product->product_name = $request->product_name;
-        $product->product_description = $request->product_description;
-        $product->category_id = $request->product_category;
-        $product->save();
-
-        return redirect('/product/' . $product->id);
+        return redirect('/product/' . $tmpProduct->id);
     }
 
     /**
@@ -156,14 +151,9 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
-    {
-        $product = Product::where([
-                ['id', $id],
-                ['user_id', Auth::user()->id]
-            ])->first();
-        $product->delete();
+    public function destroy(Request $request, $id) {
         
+        $this->product->deleteById($request->user(), $id);
 
         return redirect('/product');
     }

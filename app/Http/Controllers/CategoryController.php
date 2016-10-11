@@ -3,17 +3,30 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
 use App\Http\Requests;
 use Validator;
 use App\Category;
+use App\Contracts\CategoryRepositoryInterface;
 
-class CategoryController extends Controller
-{
+class CategoryController extends Controller {
 
-    public function __construct() {
+    /**
+     * The category repository instance.
+     *
+     * @var CategoryRepositoryInterface
+     */
+    protected $category;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param  CategoryRepositoryInterface $category
+     * @return void
+     */
+    public function __construct(CategoryRepositoryInterface $category) {
 
         $this->middleware('auth');
+        $this->category = $category;
 
     }
 
@@ -25,9 +38,9 @@ class CategoryController extends Controller
     public function index()
     {
         
-        $category = Category::all();
+        $tmpCategory = $this->category->getCategory();
 
-        return view('category.index', ['categories' => $category]);
+        return view('category.index', ['categories' => $tmpCategory]);
 
     }
 
@@ -61,11 +74,7 @@ class CategoryController extends Controller
             ->withErrors($validator);
         }
 
-        $category = new Category;
-        $category->category_name = $request->category_name;
-        $category->category_description = $request->category_description;
-
-        $category->save();
+        $this->category->createCategory($request);
 
         return redirect('/category');
     }
@@ -78,9 +87,9 @@ class CategoryController extends Controller
      */
     public function show($slug)
     {
-        $category = Category::findBySlugOrFail($slug);
+        $tmpCategory = $this->category->forSlug($slug);
 
-        return view('category.show', ['category' => $category]);
+        return view('category.show', ['category' => $tmpCategory]);
 
     }
 
@@ -93,9 +102,9 @@ class CategoryController extends Controller
     public function edit($slug)
     {
 
-        $category = Category::findBySlugOrFail($slug);
+        $tmpCategory = $this->category->forSlug($slug);
 
-        return view('category.edit', ['category' => $category]);
+        return view('category.edit', ['category' => $tmpCategory]);
     }
 
     /**
@@ -119,13 +128,9 @@ class CategoryController extends Controller
             ->withErrors($validator);
         }
 
-        $category = Category::findBySlugOrFail($slug);
-        $category->category_name = $request->category_name;
-        $category->category_description = $request->category_description;
+        $tmpCategory = $this->category->updateBySlug($request, $slug);
 
-        $category->save();
-
-        return redirect('/category/' . $category->category_name_slug);
+        return redirect('/category/' . $tmpCategory->category_name_slug);
 
     }
 
@@ -137,11 +142,7 @@ class CategoryController extends Controller
      */
     public function destroy($slug)
     {
-        //
-        $category = Category::findBySlugOrFail($slug);
-        $category->delete();
-        
-
+        $this->category->deleteBySlug($slug);
         return redirect('/category');
     }
 }
