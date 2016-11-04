@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
-use Validator;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Product;
 use App\Category;
 use App\Contracts\ProductRepositoryInterface;
@@ -60,7 +61,7 @@ class ProductController extends Controller {
      */
     public function create() {
 
-        $tmpCategory = $this->category->getCategory();
+        $tmpCategory = $this->category->all();
 
         return view('product.create', ['categories' => $tmpCategory]);
     }
@@ -68,24 +69,12 @@ class ProductController extends Controller {
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  App\Http\Requests\StoreProductRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request) {
+    public function store(StoreProductRequest $request) {
 
-        $validator = Validator::make($request->all(), [
-            'product_name' => 'required|max:255',
-            'product_description' => 'max:1000',
-            'product_category' => 'required'
-            ]);
-
-        if ($validator->fails()) {
-            return redirect('/product/create')
-            ->withInput()
-            ->withErrors($validator);
-        }
-
-        $this->product->createProduct($request);
+        $this->product->createProduct($request, $request->user()->id);
 
         return redirect('/product');
 
@@ -99,7 +88,8 @@ class ProductController extends Controller {
      */
     public function show(Request $request, $id) {
 
-        $tmpProduct = $this->product->forUserAndId($request->user(), $id);
+        // $tmpProduct = $this->product->forUserAndId($request->user(), $id);
+        $tmpProduct = $this->product->forId($id);
 
         return view('product.show', ['product' => $tmpProduct]);
     }
@@ -113,7 +103,7 @@ class ProductController extends Controller {
     public function edit(Request $request, $id) {
 
         $tmpProduct = $this->product->forUserAndId($request->user(), $id);
-        $tmpCategory = $this->category->getCategory();
+        $tmpCategory = $this->category->all();
 
         return view('product.edit', ['product' => $tmpProduct,
             'categories' =>$tmpCategory
@@ -123,24 +113,13 @@ class ProductController extends Controller {
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  App\Http\Requests\UpdateProductRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id) {
-        $validator = Validator::make($request->all(), [
-            'product_name' => 'required|max:255',
-            'product_description' => 'max:1000',
-            'product_category' => 'required'
-            ]);
+    public function update(UpdateProductRequest $request, $id) {
 
-        if ($validator->fails()) {
-            return redirect('/product/' . $id . '/edit')
-            ->withInput()
-            ->withErrors($validator);
-        }
-
-        $tmpProduct = $this->product->updateById($request, $id);
+        $tmpProduct = $this->product->updateById($request, $id, $request->user()->id);
 
         return redirect('/product/' . $tmpProduct->id);
     }
@@ -151,9 +130,9 @@ class ProductController extends Controller {
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Request $request, $id) {
+    public function destroy($id) {
         
-        $this->product->deleteById($request->user(), $id);
+        $this->product->deleteById($id);
 
         return redirect('/product');
     }

@@ -26,5 +26,25 @@
 
 	</div>
 
+    <div class="row">
+
+        @if (count($products) != 0)
+
+            <h2>Products in category</h2>
+            
+            @foreach ($products as $product)
+
+            <div class="col-sm-6">
+                <a href="/product/{{$product->id}}">{{$product->product_name}}</a>
+                <p>{{$product->product_description}}</p>
+            </div>
+
+            @endforeach
+
+        @else 
+            <h3>No products for this category</h3/>
+        @endif
+    </div>
+
 </div>
 @endsection

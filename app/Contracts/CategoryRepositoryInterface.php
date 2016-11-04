@@ -12,7 +12,7 @@ interface CategoryRepositoryInterface {
 	*
 	*   @return \Illuminate\Database\Eloquent\Collection
 	*/
-	function getCategory();
+	function all();
 
 	/**
 	*	Get a category by category ID

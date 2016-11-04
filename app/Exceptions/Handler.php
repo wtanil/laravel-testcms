@@ -6,8 +6,12 @@ use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 
+use App\Traits\ApiExceptionHandlerTrait;
+
 class Handler extends ExceptionHandler
 {
+    use ApiExceptionHandlerTrait;
+
     /**
      * A list of the exception types that should not be reported.
      *
@@ -44,6 +48,13 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
+        
+        // ADD
+        if ($this->isApiCall($request)) {
+            return $this->getJsonResponseForException($exception);
+        }
+        // end of ADD
+
         return parent::render($request, $exception);
     }
 

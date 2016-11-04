@@ -4,14 +4,19 @@
 <div class="container">
     <div class="row">
 
-        @foreach ($categories as $category)
+    	@if ($categories != null)
+	        @foreach ($categories as $category)
 
-        <div class="col-sm-6">
-            <a href="/category/{{$category->category_name_slug}}">{{$category->category_name}}</a>
-        </div>
+	        <div class="col-sm-6">
+	            <a href="/category/{{$category->category_name_slug}}">{{$category->category_name}}</a>
+	        </div>
 
-        @endforeach
-
+	        @endforeach
+        @else
+        	<div class="col-sm-12">
+            	<a href="/category/create">No categories found, please create one</a>
+        	</div>
+        @endif
         
 
     </div>

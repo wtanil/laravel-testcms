@@ -13,7 +13,7 @@ class CategoryRepository implements CategoryRepositoryInterface {
 	*
 	*   @return \Illuminate\Database\Eloquent\Collection
 	*/
-	function getCategory() {
+	function all() {
 		return Category::all();
 	}
 
@@ -24,7 +24,7 @@ class CategoryRepository implements CategoryRepositoryInterface {
 	*	@return App\Category
 	*/
 	function forId($id) {
-		return Category::find($id);
+		return Category::findOrFail($id);
 	}
 
 	/**
@@ -46,8 +46,8 @@ class CategoryRepository implements CategoryRepositoryInterface {
 	function createCategory(Request $request) {
 		$category = new Category;
 
-        $category->category_name = $request->category_name;
-        $category->category_description = $request->category_description;
+        $category->category_name = $request->input('category_name');
+        $category->category_description = $request->input('category_description');
 
         return $category->save();
 	}
@@ -60,8 +60,8 @@ class CategoryRepository implements CategoryRepositoryInterface {
 	*	@return bool
 	*/
 	function update(Request $request, $category){
-		$category->category_name = $request->category_name;
-        $category->category_description = $request->category_description;
+		$category->category_name = $request->input('category_name');
+        $category->category_description = $request->input('category_description');
 
         return $category->save();
 	}

@@ -15,7 +15,7 @@
         	@endforeach
         @else
         	<div class="col-sm-12">
-            	<a href="/product/create">No Product found, please create one</a>
+            	<a href="/product/create">No products found, please create one</a>
         	</div>
         @endif
         

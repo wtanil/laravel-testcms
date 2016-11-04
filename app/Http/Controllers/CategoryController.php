@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
-use Validator;
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use App\Category;
 use App\Contracts\CategoryRepositoryInterface;
+use App\Contracts\ProductRepositoryInterface;
 
 class CategoryController extends Controller {
 
@@ -18,15 +20,23 @@ class CategoryController extends Controller {
     protected $category;
 
     /**
+     * The product repository instance.
+     *
+     * @var ProductRepositoryInterface
+     */
+    protected $product;
+
+    /**
      * Create a new controller instance.
      *
      * @param  CategoryRepositoryInterface $category
      * @return void
      */
-    public function __construct(CategoryRepositoryInterface $category) {
+    public function __construct(CategoryRepositoryInterface $category, ProductRepositoryInterface $product) {
 
         $this->middleware('auth');
         $this->category = $category;
+        $this->product = $product;
 
     }
 
@@ -38,7 +48,7 @@ class CategoryController extends Controller {
     public function index()
     {
         
-        $tmpCategory = $this->category->getCategory();
+        $tmpCategory = $this->category->all();
 
         return view('category.index', ['categories' => $tmpCategory]);
 
@@ -57,22 +67,11 @@ class CategoryController extends Controller {
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  App\Http\Requests\StoreCategoryRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request)
     {
-
-        $validator = Validator::make($request->all(), [
-            'category_name' => 'required|max:255',
-            'category_description' => 'max:1000'
-            ]);
-
-        if ($validator->fails()) {
-            return redirect('/category/create')
-            ->withInput()
-            ->withErrors($validator);
-        }
 
         $this->category->createCategory($request);
 
@@ -88,8 +87,9 @@ class CategoryController extends Controller {
     public function show($slug)
     {
         $tmpCategory = $this->category->forSlug($slug);
+        $tmpProduct = $this->product->forCategorySlug($slug);
 
-        return view('category.show', ['category' => $tmpCategory]);
+        return view('category.show', ['category' => $tmpCategory, 'products' => $tmpProduct]);
 
     }
 
@@ -110,23 +110,12 @@ class CategoryController extends Controller {
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  App\Http\Requests\UpdateCategoryRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $slug)
+    public function update(UpdateCategoryRequest $request, $slug)
     {
-        
-        $validator = Validator::make($request->all(), [
-            'category_name' => 'required|max:255',
-            'category_description' => 'max:1000'
-            ]);
-
-        if ($validator->fails()) {
-            return redirect('/category/' . $slug . '/edit')
-            ->withInput()
-            ->withErrors($validator);
-        }
 
         $tmpCategory = $this->category->updateBySlug($request, $slug);
 
